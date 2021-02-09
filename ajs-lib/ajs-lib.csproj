@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <RootNamespace>ajs_lib</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="StdLib\" />
+  </ItemGroup>
+</Project>
