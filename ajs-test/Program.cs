@@ -1,4 +1,5 @@
-﻿using System;
+
+using System;
 using ajs_lib;
 using ajs_lib.StdLib;
 
@@ -11,6 +12,8 @@ namespace ajs_test
         static void Main(string[] args)
         {
             jsGlobal = new Global();
+            var consoleLog = ((jsGlobal.GetKey("console")).GetKey((jsGlobal.GetKey("log")).AsCSharpString)); //.Call(new IJSObject[] { new JSString("Hello") });
+            System.Console.WriteLine(consoleLog.Type);
         }
     }
 }

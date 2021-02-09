@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using Esprima;
+using Esprima.Ast;
 
 namespace ajs_codegen
 {
@@ -52,25 +53,26 @@ namespace ajs_test
 }";
         }
 
-        void EmitForASTNode (Esprima.Ast.INode node)
+        void EmitForASTNode (INode node)
         {
             switch (node.Type)
             {
-                case Esprima.Ast.Nodes.Program:
-                    EmitForProgram((Esprima.Ast.Program)node);
+                case Nodes.Program:
+                    EmitForProgram((Program)node);
                     break;
-                case Esprima.Ast.Nodes.VariableDeclaration:
-                    EmitForVariableDeclaration((Esprima.Ast.VariableDeclaration)node);
+                case Nodes.VariableDeclaration:
+                    EmitForVariableDeclaration((VariableDeclaration)node);
                     break;
-                case Esprima.Ast.Nodes.ExpressionStatement:
-                    EmitForExpressionStatement((Esprima.Ast.ExpressionStatement)node);
+                case Nodes.ExpressionStatement:
+                    EmitForExpressionStatement((ExpressionStatement)node);
                     break;
                 default:
                     throw new NotImplementedException($"Unimplemented node {node}");
             }
+            Emitted += "\n";
         }
 
-        void EmitForProgram (Esprima.Ast.Program prog)
+        void EmitForProgram (Program prog)
         {
             foreach (var node in prog.ChildNodes)
             {
@@ -78,12 +80,26 @@ namespace ajs_test
             }
         }
 
-        void EmitForExpressionStatement (Esprima.Ast.ExpressionStatement expStmt)
+        void EmitForCallExpression (CallExpression call)
         {
-            EmitForExpression(expStmt.Expression);
+            Emitted += "(";
+            EmitForExpression(call.Callee);
+            Emitted += ").Call(new IJSObject[] {";
+            foreach (var arg in call.Arguments)
+            {
+                EmitForExpression((Expression)arg);
+                Emitted += ", ";
+            }
+            Emitted += "})";
         }
 
-        void EmitForVariableDeclaration (Esprima.Ast.VariableDeclaration decl)
+        void EmitForExpressionStatement (ExpressionStatement expStmt)
+        {
+            EmitForExpression(expStmt.Expression);
+            Emitted += ";";
+        }
+
+        void EmitForVariableDeclaration (VariableDeclaration decl)
         {
             foreach (var dec in decl.Declarations)
             {
@@ -91,31 +107,61 @@ namespace ajs_test
             }
         }
 
-        void EmitForVariableDeclarator (Esprima.Ast.VariableDeclarator dec)
+        void EmitForVariableDeclarator (VariableDeclarator dec)
         {
-            Debug.Assert(dec.Id.Type == Esprima.Ast.Nodes.Identifier);
+            Debug.Assert(dec.Id.Type == Nodes.Identifier);
 
-            var ident = (Esprima.Ast.Identifier)dec.Id;
+            var ident = (Identifier)dec.Id;
 
-            Emitted += $"jsGlobal.SetKey(\"{ident.Name}\", new JSVariable(";
+            Emitted += $"jsGlobal.SetKey(\"{ident.Name}\", ";
             EmitForExpression(dec.Init);
             // TODO: Is it const? Hardcoded as no for now (all declarations are "let")
-            Emitted += ", false);";
+            Emitted += ");";
         }
 
-        void EmitForExpression (Esprima.Ast.Expression exp)
+        void EmitForExpression (Expression exp, bool identsAsStrings = false)
         {
             switch (exp.Type)
             {
-                case Esprima.Ast.Nodes.Literal:
-                    EmitForLiteral((Esprima.Ast.Literal)exp);
+                case Nodes.Literal:
+                    EmitForLiteral((Literal)exp);
+                    break;
+                case Nodes.CallExpression:
+                    EmitForCallExpression((CallExpression)exp);
+                    break;
+                case Nodes.MemberExpression:
+                    EmitForMemberExpression((MemberExpression)exp);
+                    break;
+                case Nodes.Identifier:
+                    EmitForIdentifier((Identifier)exp, identsAsStrings);
                     break;
                 default:
                     throw new NotImplementedException($"Unimplemented expression {exp}");
             }
         }
 
-        void EmitForLiteral (Esprima.Ast.Literal lit)
+        void EmitForIdentifier (Identifier ident, bool identsAsStrings = false)
+        {
+            if (identsAsStrings)
+            {
+                // For member expressions
+                Emitted += $"new JSString(\"{ident.Name}\")";
+                return;
+            }
+            // TODO: Read from localThis
+            Emitted += $"jsGlobal.GetKey(\"{ident.Name}\")";
+        }
+
+        void EmitForMemberExpression (MemberExpression exp)
+        {
+            Emitted += "(";
+            EmitForExpression(exp.Object);
+            Emitted += ").GetKey((";
+            EmitForExpression(exp.Property, true);
+            Emitted += ").AsCSharpString)";
+        }
+
+        void EmitForLiteral (Literal lit)
         {
             switch (lit.TokenType)
             {
