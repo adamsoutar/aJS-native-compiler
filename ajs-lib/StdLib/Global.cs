@@ -6,7 +6,9 @@ namespace ajs_lib.StdLib
     // The global object on which all other things are looked up.
     public class Global : JSObject
     {
-        public Global()
+        // Extends of the super constructor while providing default args
+        // (it throws when lookup fails)
+        public Global() : base(null, true)
         {
             SetKey("console", new StdLib.Console());
         }

@@ -42,6 +42,9 @@ namespace ajs_test
         static void Main(string[] args)
         {
             jsGlobal = new Global();
+
+            // Similar to the local this object
+            var scope = new JSObject(jsGlobal);
 ";
         }
 
@@ -113,7 +116,7 @@ namespace ajs_test
 
             var ident = (Identifier)dec.Id;
 
-            Emitted += $"jsGlobal.SetKey(\"{ident.Name}\", ";
+            Emitted += $"scope.SetKey(\"{ident.Name}\", ";
             EmitForExpression(dec.Init);
             // TODO: Is it const? Hardcoded as no for now (all declarations are "let")
             Emitted += ");";
@@ -135,9 +138,52 @@ namespace ajs_test
                 case Nodes.Identifier:
                     EmitForIdentifier((Identifier)exp, identsAsStrings);
                     break;
+                case Nodes.AssignmentExpression:
+                    EmitForAssignmentExpression((AssignmentExpression)exp);
+                    break;
+                case Nodes.BinaryExpression:
+                    EmitForBinaryExpression((BinaryExpression)exp);
+                    break;
                 default:
                     throw new NotImplementedException($"Unimplemented expression {exp}");
             }
+        }
+
+        void EmitForBinaryExpression (BinaryExpression bin)
+        {
+            string funcName;
+            switch (bin.Operator)
+            {
+                case BinaryOperator.Plus:
+                    funcName = "Plus";
+                    break;
+                default:
+                    throw new NotImplementedException($"Unimplemented binary operator {bin.Operator}");
+            }
+
+            Emitted += $"Operators.{funcName}(";
+            EmitForExpression(bin.Left);
+            Emitted += ", ";
+            EmitForExpression(bin.Right);
+            Emitted += ")";
+        }
+
+        void EmitForAssignmentExpression (AssignmentExpression ass /* :) */)
+        {
+            if (ass.Operator != AssignmentOperator.Assign)
+            {
+                throw new NotImplementedException($"Unimplemented assignment operator {ass.Operator}");
+            }
+
+            // TODO: This doesn't work outside of an ExpressionStatement yet
+            // TODO: Non-identifier LHS. This will be quite the job.
+
+            Debug.Assert(ass.Left.Type == Nodes.Identifier);
+
+            var ident = (Identifier)ass.Left;
+            Emitted += $"scope.SetKey(\"{ident.Name}\", ";
+            EmitForExpression(ass.Right);
+            Emitted += ")";
         }
 
         void EmitForIdentifier (Identifier ident, bool identsAsStrings = false)
@@ -149,7 +195,7 @@ namespace ajs_test
                 return;
             }
             // TODO: Read from localThis
-            Emitted += $"jsGlobal.GetKey(\"{ident.Name}\")";
+            Emitted += $"scope.GetKey(\"{ident.Name}\")";
         }
 
         void EmitForMemberExpression (MemberExpression exp)

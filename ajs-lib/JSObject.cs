@@ -5,7 +5,7 @@ namespace ajs_lib
 {
     public class JSObject : UncallableObject, IJSObject
     {
-        public virtual IJSObject Prototype { get => null; }
+        public virtual IJSObject Prototype { get; }
         public virtual JSType Type { get => JSType.Object; }
         public virtual string AsCSharpString { get => "TODO"; }
         public virtual Action<string, IJSObject> SetKey { get => PrivSetKey; }
@@ -13,15 +13,20 @@ namespace ajs_lib
 
         // Object backing dictionary
         public Dictionary<string, IJSObject> Dict;
+        bool ThrowOnLookupFail;
 
-        public JSObject()
+        public JSObject(IJSObject prototype = null, bool throwOnLookupFail = false)
         {
             Dict = new Dictionary<string, IJSObject>();
+            Prototype = prototype;
+            // If we're, say, the global object, we wanna throw on key lookup failure.
+            ThrowOnLookupFail = throwOnLookupFail;
         }
 
         void PrivSetKey (string key, IJSObject value)
         {
-            Dict.Add(key, value);
+            if (Dict.ContainsKey(key)) Dict[key] = value;
+            else Dict.Add(key, value);
         }
 
         IJSObject PrivGetKey (string key)
@@ -32,7 +37,15 @@ namespace ajs_lib
                 return Dict[key];
             } else
             {
-                return new JSUndefined();
+                if (Prototype == null)
+                {
+                    if (ThrowOnLookupFail)
+                    {
+                        throw new Exception($"ReferenceError: Can't find variable {key}");
+                    }
+                    return new JSUndefined();
+                }
+                return Prototype.GetKey(key);
             }
         }
     }
