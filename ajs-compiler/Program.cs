@@ -10,9 +10,10 @@ namespace ajs_compiler
         {
             var codegen = new Codegen();
             var cSOutput = codegen.EmitCodeForJS(@"
-let x = 'Hello, '
-x = x + 'world!'
-console.log(x)
+function sayHello () {
+  console.log('Hello from a function!')
+}
+sayHello()
 ");
 
             Console.WriteLine(cSOutput);

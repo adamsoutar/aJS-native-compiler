@@ -69,6 +69,12 @@ namespace ajs_test
                 case Nodes.ExpressionStatement:
                     EmitForExpressionStatement((ExpressionStatement)node);
                     break;
+                case Nodes.FunctionDeclaration:
+                    EmitForFunctionDeclaration((FunctionDeclaration)node);
+                    break;
+                case Nodes.BlockStatement:
+                    EmitForBlockStatement((BlockStatement)node);
+                    break;
                 default:
                     throw new NotImplementedException($"Unimplemented node {node}");
             }
@@ -81,6 +87,32 @@ namespace ajs_test
             {
                 EmitForASTNode(node);
             }
+        }
+
+        void EmitForBlockStatement (BlockStatement block)
+        {
+            foreach (var node in block.ChildNodes)
+            {
+                EmitForASTNode(node);
+            }
+        }
+
+        void EmitForFunctionDeclaration (FunctionDeclaration decl)
+        {
+            // TODO: Hoisting (without a preprocessing step. aJS _is_ a preprocessing step)
+
+            if (decl.Params.Count > 0)
+            {
+                throw new NotImplementedException("User functions with arguments aren't implemented");
+            }
+
+            Emitted += $"scope.SetKey(\"{decl.Id.Name}\", new JSNativeFunction(args => {{\n";
+            EmitForASTNode(decl.Body);
+
+            // This is temp because return values aren't supported yet
+            Emitted += "return new JSUndefined();";
+
+            Emitted += "}));";
         }
 
         void EmitForCallExpression (CallExpression call)
