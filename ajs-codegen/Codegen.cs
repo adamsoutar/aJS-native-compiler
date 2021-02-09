@@ -75,6 +75,9 @@ namespace ajs_test
                 case Nodes.BlockStatement:
                     EmitForBlockStatement((BlockStatement)node);
                     break;
+                case Nodes.IfStatement:
+                    EmitForIfStatement((IfStatement)node);
+                    break;
                 default:
                     throw new NotImplementedException($"Unimplemented node {node}");
             }
@@ -95,6 +98,20 @@ namespace ajs_test
             {
                 EmitForASTNode(node);
             }
+        }
+
+        void EmitForIfStatement (IfStatement ifStmt)
+        {
+            if (ifStmt.Alternate != null)
+            {
+                throw new NotImplementedException("Else statements aren't implemented");
+            }
+
+            Emitted += "if (Coercion.CoerceToBool(";
+            EmitForExpression(ifStmt.Test);
+            Emitted += ").Value) {\n";
+            EmitForASTNode(ifStmt.Consequent);
+            Emitted += "}";
         }
 
         void EmitForFunctionDeclaration (FunctionDeclaration decl)
@@ -188,6 +205,12 @@ namespace ajs_test
             {
                 case BinaryOperator.Plus:
                     funcName = "Plus";
+                    break;
+                case BinaryOperator.StrictlyEqual:
+                    funcName = "StrictlyEqual";
+                    break;
+                case BinaryOperator.StricltyNotEqual:
+                    funcName = "StrictlyNotEqual";
                     break;
                 default:
                     throw new NotImplementedException($"Unimplemented binary operator {bin.Operator}");
