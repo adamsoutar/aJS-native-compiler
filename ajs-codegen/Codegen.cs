@@ -45,12 +45,18 @@ namespace ajs_test
 
             // Similar to the local this object
             var scope = new JSObject(jsGlobal);
+
+            var watch = new System.Diagnostics.Stopwatch();
+            watch.Start();
+            // Right, we're set up. What follows is code auto-generated from JS:
 ";
         }
 
         void EmitSkeletonShutdown ()
         {
             Emitted += @"
+            watch.Stop();
+            System.Console.WriteLine($""Execution Time: { watch.ElapsedMilliseconds}ms"");
         }
     }
 }";
@@ -211,6 +217,14 @@ namespace ajs_test
                     break;
                 case BinaryOperator.StricltyNotEqual:
                     funcName = "StrictlyNotEqual";
+                    break;
+                // Can you tell I'm implementing operators in the order required to write
+                // a FizzBuzz benchmark as quick as I can?
+                case BinaryOperator.Modulo:
+                    funcName = "Remainder";
+                    break;
+                case BinaryOperator.Minus:
+                    funcName = "Minus";
                     break;
                 default:
                     throw new NotImplementedException($"Unimplemented binary operator {bin.Operator}");

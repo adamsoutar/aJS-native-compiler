@@ -3,6 +3,7 @@ namespace ajs_lib
 {
     public static class Operators
     {
+        // -= ARITHMETIC =-
         public static IJSObject Plus (IJSObject a, IJSObject b)
         {
             if (a.Type == JSType.Number && b.Type == JSType.Number)
@@ -21,6 +22,35 @@ namespace ajs_lib
             }
         }
 
+        public static IJSObject Minus (IJSObject a, IJSObject b)
+        {
+            if (a.Type == JSType.Number && b.Type == JSType.Number)
+            {
+                var aN = (JSNumber)a;
+                var bN = (JSNumber)b;
+                return new JSNumber(aN.Value - bN.Value);
+            }
+            else
+            {
+                return new JSNaN();
+            }
+        }
+
+        // TIL: A _remainder_ operator is not quite a _modulo_ operator
+        public static IJSObject Remainder (IJSObject a, IJSObject b)
+        {
+            if (a.Type == JSType.Number && b.Type == JSType.Number)
+            {
+                var aN = (JSNumber)a;
+                var bN = (JSNumber)b;
+                return new JSNumber(aN.Value % bN.Value);
+            } else
+            {
+                return new JSNaN();
+            }
+        }
+
+        // -= COMPARISON =-
         // TODO: Alg. isn't absolutely perfect
         public static JSBool StrictlyEqual(IJSObject a, IJSObject b)
         {
@@ -47,6 +77,9 @@ namespace ajs_lib
             {
                 case JSType.Number:
                     areEqual = ((JSNumber)a).Value == ((JSNumber)b).Value;
+                    break;
+                case JSType.String:
+                    areEqual = ((JSString)a).Value == ((JSString)b).Value;
                     break;
                 default:
                     throw new NotImplementedException($"Equality between type {a.Type} and {b.Type} is not implemented");

@@ -10,11 +10,25 @@ namespace ajs_compiler
         {
             var codegen = new Codegen();
             var cSOutput = codegen.EmitCodeForJS(@"
-let x = 1
-
-if (x === 1) {
-  console.log('x is one')
+let n = 1
+function runNextFizzbuzz () {
+  let str = ''
+  if (n % 3 === 0) {
+    str = 'Fizz'
+  }
+  if (n % 5 === 0) {
+    str = str + 'Buzz'
+  }
+  if (str === '') {
+    str = n
+  }
+  console.log(str)
+  n = n + 1
+  if (n !== 101) {
+    runNextFizzbuzz()
+  }
 }
+runNextFizzbuzz()
 ");
 
             Console.WriteLine(cSOutput);

@@ -5,6 +5,7 @@ namespace ajs_lib
     {
         Undefined,
         Null,
+        NaN,
         Number,
         String,
         Boolean,
